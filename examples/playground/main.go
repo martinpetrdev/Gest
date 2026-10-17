@@ -4,10 +4,12 @@ import (
 	"log"
 
 	gest "github.com/martinpetrdev/Gest"
+	"github.com/martinpetrdev/Gest/examples/playground/greeting"
 )
 
 var AppModule = gest.Module{
-	Name: "app",
+	Name:    "app",
+	Imports: []*gest.Module{&greeting.GreetingModule},
 }
 
 func main() {
