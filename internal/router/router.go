@@ -1,10 +1,12 @@
 package router
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 
+	http_exception "github.com/martinpetrdev/Gest/internal/http-exception"
 	"github.com/martinpetrdev/Gest/internal/logger"
 	"github.com/martinpetrdev/Gest/internal/url"
 )
@@ -41,6 +43,23 @@ func (r *Router) registerRoute(method HttpMethod, path string, handler RouteHand
 	r.logger.Log(fmt.Sprintf("Mapped {%s, %s} route", "GET", fullUrl))
 
 	r.mux.HandleFunc(r.getMuxRoute(method, fullUrl), func(writer http.ResponseWriter, request *http.Request) {
+		defer func() {
+			rec := recover()
+			if rec == nil {
+				return
+			}
+
+			ex, ok := rec.(http_exception.IHTTPException)
+			if !ok {
+				panic(rec) // not ours, rethrow
+			}
+
+			body, _ := json.Marshal(ex.ResponseBody())
+
+			writer.Header().Set("Content-Type", "application/json")
+			writer.WriteHeader(ex.ResponseCode())
+			_, _ = writer.Write(body)
+		}()
 		res := handler(NewRouteContext(request))
 
 		_, err := writer.Write([]byte(res))

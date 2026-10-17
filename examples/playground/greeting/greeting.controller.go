@@ -27,7 +27,7 @@ func (c *GreetingController) BasicGreeting(ctx *gest.RouteContext) string {
 func (c *GreetingController) Hello(ctx *gest.RouteContext) string {
 	name, err := ctx.GetParam("name")
 	if err != nil {
-		return "ERROR"
+		panic(gest.NewHTTPBadRequestException("Name not provided"))
 	}
 
 	return c.svc.Hello(name)
@@ -36,12 +36,12 @@ func (c *GreetingController) Hello(ctx *gest.RouteContext) string {
 func (c *GreetingController) WithAge(ctx *gest.RouteContext) string {
 	name, err := ctx.GetParam("name")
 	if err != nil {
-		return "ERROR"
+		panic(gest.NewHTTPBadRequestException("Name not provided"))
 	}
 
 	age, err := ctx.GetParamInt("age")
 	if err != nil {
-		return "ERROR"
+		panic(gest.NewHTTPBadRequestException("Age not provided or is not an integer"))
 	}
 
 	return c.svc.WithAge(name, age)
