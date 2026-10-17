@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"github.com/martinpetrdev/Gest/internal/DI"
+	"github.com/martinpetrdev/Gest/internal/format"
+	"github.com/martinpetrdev/Gest/internal/logger"
 	"github.com/martinpetrdev/Gest/internal/router"
 )
 
@@ -17,9 +19,15 @@ type Module struct {
 	Imports     []*Module
 	Providers   []any
 	Controllers []any
+
+	logger *logger.Logger
 }
 
 func (m *Module) Register(c *DI.Container, mux *http.ServeMux, seen map[*Module]bool) error {
+	m.logger = logger.New(format.PascalCase([]string{m.Name, "module"}))
+
+	var totalDeps int = 0
+
 	if seen[m] {
 		return nil
 	}
@@ -29,12 +37,16 @@ func (m *Module) Register(c *DI.Container, mux *http.ServeMux, seen map[*Module]
 		if err := imp.Register(c, mux, seen); err != nil {
 			return err
 		}
+
+		totalDeps++
 	}
 
 	for _, provider := range m.Providers {
 		if err := c.Provide(provider); err != nil {
 			return fmt.Errorf("module %s: %w", m.Name, err)
 		}
+
+		totalDeps++
 	}
 
 	for _, constructor := range m.Controllers {
@@ -49,7 +61,11 @@ func (m *Module) Register(c *DI.Container, mux *http.ServeMux, seen map[*Module]
 		}
 
 		controller.Routes(router.New(mux))
+
+		totalDeps++
 	}
+
+	m.logger.Log(fmt.Sprintf("%d dependencies registered", totalDeps))
 
 	return nil
 }
